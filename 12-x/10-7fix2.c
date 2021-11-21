@@ -92,7 +92,7 @@ void semhandle()
 int main(void) 
 {
     	int a;
-    	int semid;
+	int semid;
 
 	if ((semid =  initsem()) < 0)
 		exit(1);
