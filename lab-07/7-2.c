@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <wait.h>
 
 int main(int argc, char *argv[]) 
 {
@@ -61,6 +62,7 @@ int main(int argc, char *argv[])
                             	perror("mmap");
                             	exit(1);
                     	}
+			wait(NULL);
 			break;
         }
 	close(fd);

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <wait.h>
 
 int main(void)
 {
@@ -38,6 +39,7 @@ int main(void)
 			close(pd[0]);
 			write(pd[1], str, strlen(str));
 			printf("%d write data\n", (int)getpid());
+			wait(NULL);
 			break;
 	}	
 	// 파이프 닫기
