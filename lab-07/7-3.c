@@ -10,7 +10,12 @@ int main(void)
 	char buf[BUFSIZ];
 	int len, status;
 	// 파이프 생성하기	
-	pipe(pd);
+	if(pipe(pd) == -1)
+	{
+		// 만약 오류가 있다면 에러문구를 출력후 종료한다.
+		perror("pipe Error");
+		exit(1);
+	}
 	
 	// pd[1] 즉 write영역에 str정보를 입력
 	write(pd[1], str, strlen(str));
