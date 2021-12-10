@@ -51,10 +51,12 @@ char Selectall(void* NotUsed, int argc, char** argv, char**azColName)
 int main(void)
 {
 	sqlite3* db;
+	int rc;
 	sqlite3_stmt* res;
 	
 	struct sockaddr_un ser, cli;
     	int sd, nsd, len, clen;
+	char Msg[MAXLEN];
 
 	// socket 생성
     	if ((sd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) 
@@ -92,6 +94,8 @@ int main(void)
         	perror("accept");
         	exit(1);
     	}
+	// 데이터 베이스 생성
+	Create_table(db);
 	while(1)
 	{
 		char command;
@@ -103,9 +107,36 @@ int main(void)
 			continue;
 		}
 		// 만약 클라이언트에서 종료를 보냈다면 서버 종료
-		if(strcmp(command, 'Q') || strcmp(command.'q'))
+		if((command == 'Q') || (command == 'q'))
 			break;
-		if(command = 'c')
+		// 데이터 집어넣기
+		if(command == 'c')
+		{
+
+		}
+		// 데이터 삭제
+		if(command == 'd')
+		{
+
+		}
+		// 데이터 모두 출력
+		if (command == 'P')
+		{
+			char* query = "SELET * FROM Lists";
+			rc = sqlite3_exec(db,quert,Seletall,0, &err_msg);
+			if( rc != SQLITE_OK)
+			{
+				// 쿼리를 불러오는데 실패했다면 클라이언트에게 오류를 보내고 다시 메뉴선택을 기다린다.
+				strcpy(Msg, "데이터를 불러오기에 실패했습니다. 다시 시도해주세요.");
+				if(send(nsd, Msg, MAXLEN, 0) == -1)
+				{
+					perrr("send error\n");
+					continue;
+				}
+			}
+		}
+		// 이름으로 원하는 데이터 출력
+		if (command == 'p')
 		{
 
 		}
