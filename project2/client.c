@@ -73,7 +73,15 @@ int main(void)
 					perror("send error\n");
 					continue;
 				}
-
+				Todo todo;
+				int days;
+				char tname[MAX];
+				char tdesct[MAXLEN];
+				printf("Todolist에 저장할 항목을 입력해주세요.\n");
+				scanf("요일: %d", &days);
+				scanf("이름(50글자이내): %s", tname);
+				scanf("설명(256글자 이내): %s", tdesct);
+				todo.
 				break;
 			case 2:
 				// 2번째 명령어를 받았다면 내부에서 명령어를 d로 변경하여 서버로 전달

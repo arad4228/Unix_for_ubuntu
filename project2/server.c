@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sqlite3.h>
+#include "Todolist.h"
 
 #define SOCKET_NAME		"TodolistProject"
 
@@ -26,7 +27,7 @@ void Create_table(sqlite3* db)
                 exit(1);
         }
 
-	char* query = "CREATE TABLE Lists (Days INT, Name TEXT PRIMARY KEY, Descrition);";
+	char* query = "CREATE TABLE Lists (Days INT, Name TEXT PRIMARY KEY, Descrition TEXT);";
 	
 	rc = sqlite3_exec(db, query, 0, 0, &err_msg);
 	
@@ -104,7 +105,10 @@ int main(void)
 		// 만약 클라이언트에서 종료를 보냈다면 서버 종료
 		if(strcmp(command, 'Q') || strcmp(command.'q'))
 			break;
-		if(strcmp(command,
+		if(command = 'c')
+		{
+
+		}
 
 	}
 
