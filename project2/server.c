@@ -69,7 +69,7 @@ int main(void)
                 exit(1);
         }
         char* query = "DROP TABLE IF EXISTS Lists;"
-                "CREATE TABLE Lists (ID INTEGER PRIMARY KEY, Name TEXT, Descrition TEXT);"
+                "CREATE TABLE Lists (ID INTEGER PRIMARY KEY, Name TEXT, Description TEXT);"
 		"INSERT INTO Lists VALUES (1,'유닉스', '시험');";
 
         rc = sqlite3_exec(db, query, 0, 0, &err_msg);
@@ -104,33 +104,48 @@ int main(void)
 			printf("ok cd\n");
 			char Name[MAX];
 			char Desct[MAXLEN];
-			char* query = "INSERT INTO Lists(Name, Descrition) VALUES('?','?')";
+			char* query = "INSERT INTO Lists(Name, Description) VALUES(?,?)";
 			// client에서 보낸 메시지를 받기
 			if(recv(nsd, Rmsg, sizeof(Rmsg), 0) == -1)
-			{
+			{     
 				// 오류가 발생하면 에러를 출력하고 다시 메시지 읽기
 				perror("rece error\n");
 				exit(1);
 			}
-			sscanf(Rmsg,"%s %s", Name, Desct);
-			printf("%s %s",Name, Desct);
+			strcpy(Name,Rmsg);
+
+			if(recv(nsd, Rmsg, sizeof(Rmsg), 0) == -1)
+			{
+				perror("recv2 error\n");
+				exit(1);
+			}
+			strcpy(Desct, Rmsg);
+			printf("%s %s\n",Name, Desct);
 
 			rc = sqlite3_prepare_v2(db,query, -1, &res, 0);
 			if( rc == SQLITE_OK)
 			{
 				sqlite3_bind_text(res,1,Name, -1, SQLITE_TRANSIENT);
 				sqlite3_bind_text(res,2,Desct,-1, SQLITE_TRANSIENT);
-			}
-			step = sqlite3_step(res);
-			sqlite3_finalize(res);
-			strcpy(Smsg, "저장이 완료되었습니다.\n");
+				step = sqlite3_step(res);
+				strcpy(Smsg,"저장이 완료되었습니다.\n");
+                                if(send(nsd, Smsg, sizeof(Smsg),0) == -1)
+                                {
+                                        perror("send error\n");
+                                        exit(1);
+                                }
 
-			if(send(nsd, Smsg, sizeof(Smsg),0) == -1)
-			{
-				perror("send fail");
-				exit(1);
 			}
-		}
+			else
+			{
+				strcpy(Smsg, "저장에 실패했습니다\n");
+				if(send(nsd, Smsg, sizeof(Smsg),0) == -1)
+				{
+					perror("send error\n");
+					exit(1);
+				}
+			}
+                        }
 		// 데이터 삭제
 		if(strcmp(command,"dd") == 0)
 		{

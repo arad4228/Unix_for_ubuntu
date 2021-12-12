@@ -76,22 +76,26 @@ int main(void)
 			char tname[MAX];
 			char tdesct[MAXLEN];	
 			printf("Todolist에 저장할 항목을 입력해주세요.\n");
-			printf("\n이름(50글자이내):");
+			printf("이름(50글자이내):");
 			scanf("%s", tname);
-			printf("\n설명(256글자이내)");
+			printf("설명(256글자이내)");
 			scanf("%s", tdesct);
-			len = strlen(tname);
+			len= strlen(tname);
 			tname[len+1] = '\0';
-			len = strlen(tdesct);
-			tdesct[len+1] = '\0';
-			
-			// 작성한 데이터를 서버로 보내기
-			sprintf(Smsg,"%s %s",tname, tdesct);
+			strcpy(Smsg,tname);
 			// 데이터는 서버로 전달
 			if(send(sd, Smsg,sizeof(Smsg),0) == -1)
 			{
 				// 오류발생시 종료.
 				printf("send error\n");
+				exit(1);
+			}
+			len = strlen(tdesct);
+			tdesct[len+1] = '\0';
+			strcpy(Smsg, tdesct);
+			if(send(sd,Smsg,sizeof(Smsg),0) == -1)
+			{
+				printf("send error2\n");
 				exit(1);
 			}
 			
@@ -100,6 +104,7 @@ int main(void)
 				printf("recv fail\n");
 				exit(1);
 			}
+			printf("%s\n",Rmsg);
 		}
 		else if(command == 'D')
 		{
