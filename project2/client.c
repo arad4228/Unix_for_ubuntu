@@ -1,10 +1,3 @@
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include "Todolist.h"
 
 #define SOCKET_NAME   "TodolistProject"
@@ -13,9 +6,8 @@ int main(void)
 {
     	int sd, len;
 	// 반복문을 끝내기 위한 장치이며 사용자의 입력을 받아줄 변수
-    	char command;
-	char incom;
-
+	char incom[4];
+	char command;
 	struct sockaddr_un ser;
 	
 	// 소켓을 생성한다.
@@ -33,6 +25,7 @@ int main(void)
     	strcpy(ser.sun_path, SOCKET_NAME);
     	len = sizeof(ser.sun_family) + strlen(ser.sun_path);
 
+	printf("서버와 연결 중입니다.....\n");
 	// 서버와 연결을 요청한다.
     	if (connect(sd, (struct sockaddr *)&ser, len) < 0) 
 	{
@@ -40,101 +33,138 @@ int main(void)
         	perror("connection error");
         	exit(1);
     	}
-	printf("서버와 연결중 ....\n");
+	printf("서버 연결완료\n");
 	while(1)
 	{
+		// 보내는 메시지 공간
+		char Smsg[TotalMax];
+		// 받는 메시지 공간
+		char Rmsg[TotalMax];
+		int numberofRow;
 		printf("원하는 메뉴를 고르세요.\n");
-		printf("1. 할일 저장하기\n");
-		printf("2. 할일 지우기\n");
-		printf("3. 할일 출력하기(모두)\n");
-		printf("4. 할일 출력하기(오늘)\n");
+		printf("1. 할일 저장하기(N)\n");
+		printf("2. 할일 지우기(D)\n");
+		printf("3. 할일 출력하기(모두)(A)\n");
+		printf("4. 할일 출력하기(이름)(S)\n");
 		printf("5. 종료(Q,q)\n"); 
-		scanf("%c", &command);
-		int clen = 2;
-
+		command = getc(stdin);
+		fflush(stdin);
+		printf("%c", command);
 		// Q또는 q가 들어오면 데이터 송수신을 중단하고 종료한다.
 		if((command == 'q') || (command == 'Q'))
 		{
 
+			strcpy(incom,"qq");
 			// 서버에게 종료 메시지 보내기.
-			if(send(sd,command,clen,0) == -1)
+			if(send(sd,incom,sizeof(incom),0) == -1)
 			{
-				// 보내기 실패했다면 오류메시지를 띄우고 다시 메뉴 선택
+				// 보내기 실패했다면 오류메시지를 띄우고 종료
 				perror("send, reselecte please\n");
-				continue;
+				exit(1);
 			}
 			break;
 		}
-		switch(command)
-		{
-			case 1:
-				// 첫번째 명령어를 받았다면 내부에서 명령어를 c로 변경하여 서버로 전달
-				incom = 'c';
-				if(send(sd,incom,clen,0) == -1)
-				{
-					// 오류가 발생하면 출력후 처음부터 메뉴 선택
-					perror("send error\n");
-					continue;
-				}
-				Todo todo;
-				int days;
-				char tname[MAX];
-				char tdesct[MAXLEN];
-				printf("Todolist에 저장할 항목을 입력해주세요.\n");
-				scanf("요일: %d", &days);
-				scanf("이름(50글자이내): %s", tname);
-				scanf("설명(256글자 이내): %s", tdesct);
-				todo.Days = days;
-				strcpy(todo.Name, tname);
-				strcpy(todo.Descrition, tdesct);	
-				break;
-			case 2:
-				// 2번째 명령어를 받았다면 내부에서 명령어를 d로 변경하여 서버로 전달
-				incom = 'd';
-				char dname[MAX];
-				if(send(sd,incom,clen,0) == -1)
-				{
-					// 오류가 발생하면 출력후 처음부터 메뉴 선택
-					perror("send error\n");
-					continue;
-				}
-				printf("TOdolist에서 삭제할 일정이름을 입력하세요.");
-				scanf("%s", dname);
-				break;
+		else if(command == 'N')
+		{	
+			// 첫번째 명령어를 받았다면 내부에서 명령어를 cd로 변경하여 서버로 전달
+			strcpy(incom,"cd");
+			if(send(sd,incom,sizeof(incom),0) == -1)	
+			{
+				// 오류가 발생하면 출력
+				printf("send error\n");
+			}
 
-			case 3:
-				// 3번째 명령어를 받았다면 내부에서 명령어를 P로 변경하여 서버로 전달
-				incom = 'P';
-				if(send(sd,incom,clen,0) == -1)
-				{
-					// 오류가 발생하면 출력후 처음부터 메뉴 선택
-					perror("send error\n");
-					continue;
-				}
+			int days;
+			char tname[MAX];
+			char tdesct[MAXLEN];
+			printf("Todolist에 저장할 항목을 입력해주세요.\n");				
+			scanf("요일: %d", &days);
+			scanf("이름(50글자이내): %s", tname);
+			scanf("설명(256글자 이내): %s", tdesct);
 
-
-				break;
-
-			case 4:
-				// 4번째 명령어를 받았다면 내부에서 명령어를 p로 변경하여 서버로 전달
-				incom = 'p';
-				if(send(sd,incom,clen,0) == -1)
-				{
-					// 오류가 발생하면 출력후 처음부터 메뉴 선택
-					perror("send error\n");
-					continue;
-				}
-
-
-				break;
-
-			default:
-				printf("잘못된 값을 입력하셨습니다. 다시입력해주세요\n");
-				break;
+			// 작성한 데이터를 서버로 보내기
+			sprintf(Smsg,"%d %s %s",days, tname, tdesct);
+			// 데이터는 서버로 전달
+			if(send(sd, Smsg,sizeof(Smsg),0) == -1)
+			{
+				// 오류발생시 종료.
+				printf("send error\n");
+				exit(1);
+			}
+			if(recv(sd, Rmsg, sizeof(Rmsg),0) == -1)
+			{
+				printf("recv fail\n");
+				exit(1);
+			}
 		}
+		else if(command == 'D')
+		{
+		// 2번째 명령어를 받았다면 내부에서 명령어를 dd로 변경하여 서버로 전달
+			strcpy(incom, "dd");
+			char dname[MAX];				
+			if(send(sd,incom,sizeof(incom),0) == -1)
+			{
+				// 오류가 발생하면 출력후 처음부터 메뉴 선택
+				printf("send error\n");
+			}
 
+			printf("TOdolist에서 삭제할 일정이름을 입력하세요.");
+			scanf("%s", dname);
+				
+			// 서버로 이름을 보내서 내용을 제거하기
+			if(send(sd, dname,sizeof(dname),0) == -1)
+				// 오류가 발생하면 출력 후 처음부터 시작
+				printf("send error\n");
+		}
+		else if(command == 'A')
+		{	
+			// 3번째 명령어를 받았다면 내부에서 명령어를 Pd로 변경하여 서버로 전달
+			strcpy(incom, "Pd");
+			if(send(sd,incom,sizeof(incom),0) == -1)
+			{
+				// 오류가 발생하면 출력후 처음부터 메뉴 선택
+				printf("send error\n");
+			}
+
+			// 몇개의 row인지 전송받음.
+			if(recv(sd, Rmsg,sizeof(Rmsg)+1,0) == -1)
+				printf("recv error\n");
+			numberofRow = atoi(Rmsg);
+			for(int i = 0; i < numberofRow; i++)
+			{
+				if(recv(sd, Rmsg, sizeof(Rmsg),0) == -1)
+				{
+					printf("recv error\n");
+					exit(1);
+				}
+				printf("%s\n",Rmsg);
+			}
+		}
+		else if(command == 'S')
+		{
+			// 4번째 명령어를 받았다면 내부에서 명령어를 pd로 변경하여 서버로 전달
+			strcpy(incom, "pd");
+			if(send(sd,incom,sizeof(incom),0) == -1)
+			{
+				// 오류가 발생하면 출력후 처음부터 메뉴 선택
+				printf("send error\n");
+			}
+
+			scanf(" Todolist에서 출력하길 원하는 이름을 입력하세요. %s", Smsg);
+		
+			// 삭제할 이름을서버로 보낸다
+			if(send(sd, Smsg, sizeof(Smsg),0) == -1)
+			{
+				// 문제가 있다면 다시 보낸다.
+				printf("send error\n");
+			}
+		}
+		else
+		{
+			printf("잘못된 값을 입력하셨습니다. 다시입력해주세요\n");
+		}
 	}
-    	close(sd);
+
 
     	return 0;
 }
