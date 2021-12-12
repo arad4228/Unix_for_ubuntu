@@ -165,7 +165,7 @@ int main(void)
 		{
 			printf("ok Pd\n");
 			int count;
-			char* query1 = "SELECT COUNT(Name) FROM Lists";
+			char* query1 = "SELECT COUNT(Id) FROM Lists";
 			rc = sqlite3_prepare_v2(db,query1,-1,&res,0);
 			if(rc != SQLITE_OK)
 			{
@@ -184,6 +184,8 @@ int main(void)
 					perror("send error");
 				}
 			}
+
+			sqlite3_finalize(res);
 
 			// 모든 데이터를 전송하기.
 			char* query2 = "SELECT * FROM Lists";
@@ -205,7 +207,7 @@ int main(void)
 
 			sqlite3_finalize(res);
 		}
-		// 이름으로 원하는 데이터 출력
+		// Id으로 원하는 데이터 출력
 		if (strcmp(command,"pd") == 0)
 		{
 			int id;
@@ -217,7 +219,7 @@ int main(void)
 			}
 			id = atoi(Rmsg);
 			printf("%s\n",Rmsg);
-			char* query = "SELETR * FROM Lists WHERE ID = ?";
+			char* query = "SELECT * FROM Lists WHERE ID = ?";
 			rc = sqlite3_prepare_v2(db,query, -1, &res, 0);
 			if( rc == SQLITE_OK)
 			{
