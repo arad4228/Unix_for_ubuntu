@@ -69,8 +69,8 @@ int main(void)
                 exit(1);
         }
         char* query = "DROP TABLE IF EXISTS Lists;"
-                "CREATE TABLE Lists (ID INTEGER PRIMARY KEY, Name TEXT, Description TEXT);"
-		"INSERT INTO Lists VALUES (1,'유닉스', '시험');";
+                "CREATE TABLE Lists (ID INTEGER PRIMARY KEY, EndDay INTEGER, Name TEXT, Description TEXT);"
+		"INSERT INTO Lists VALUES (1, 20,'유닉스', '시험');";
 
         rc = sqlite3_exec(db, query, 0, 0, &err_msg);
 
@@ -102,21 +102,30 @@ int main(void)
 		if(strcmp(command,"cd") == 0)
 		{
 			printf("ok cd\n");
+			int day;
 			char Name[MAX];
 			char Desct[MAXLEN];
-			char* query = "INSERT INTO Lists(Name, Description) VALUES(?,?)";
+			char* query = "INSERT INTO Lists(EndDay ,Name, Description) VALUES(?,?,?)";
 			// client에서 보낸 메시지를 받기
+			
+			if(recv(nsd, Rmsg, sizeof(Rmsg), 0) == -1)
+			{
+				perror("recv error1\n");
+				exit(1);
+			}
+			day = atoi(Rmsg);
+
 			if(recv(nsd, Rmsg, sizeof(Rmsg), 0) == -1)
 			{     
 				// 오류가 발생하면 에러를 출력하고 다시 메시지 읽기
-				perror("rece error\n");
+				perror("recv error2\n");
 				exit(1);
 			}
 			strcpy(Name,Rmsg);
 
 			if(recv(nsd, Rmsg, sizeof(Rmsg), 0) == -1)
 			{
-				perror("recv2 error\n");
+				perror("recv error3\n");
 				exit(1);
 			}
 			strcpy(Desct, Rmsg);
@@ -125,8 +134,9 @@ int main(void)
 			rc = sqlite3_prepare_v2(db,query, -1, &res, 0);
 			if( rc == SQLITE_OK)
 			{
-				sqlite3_bind_text(res,1,Name, -1, SQLITE_TRANSIENT);
-				sqlite3_bind_text(res,2,Desct,-1, SQLITE_TRANSIENT);
+				sqlite3_bind_int(res,1, day);
+				sqlite3_bind_text(res,2,Name, -1, SQLITE_TRANSIENT);
+				sqlite3_bind_text(res,3,Desct,-1, SQLITE_TRANSIENT);
 				step = sqlite3_step(res);
 				strcpy(Smsg,"저장이 완료되었습니다.\n");
                                 if(send(nsd, Smsg, sizeof(Smsg),0) == -1)
@@ -212,9 +222,9 @@ int main(void)
 			}
 			while(sqlite3_step(res) == SQLITE_ROW)
 			{
-				sprintf(Smsg,"ID: %d, 이름: %s, 세부내용: %s\n",
-				sqlite3_column_int(res,0), sqlite3_column_text(res,1),
-				sqlite3_column_text(res,2));
+				sprintf(Smsg,"ID: %d, EndDay: %d, 이름: %s, 세부내용: %s\n",
+				sqlite3_column_int(res,0), sqlite3_column_int(res,1), sqlite3_column_text(res,2),
+				sqlite3_column_text(res,3));
                                 printf("%s",Smsg);
 				if(send(nsd, Smsg, sizeof(Smsg),0) == -1)
                                         printf("send error\n");
@@ -244,7 +254,7 @@ int main(void)
 
 			if(step ==  SQLITE_ROW)
 			{
-				sprintf(Smsg,"ID: %d 이름: %s, 세부내용: %s\n",sqlite3_column_int(res,0), sqlite3_column_text(res,1),sqlite3_column_text(res,2));
+				sprintf(Smsg,"ID: %d, EndDay: %d, 이름: %s, 세부내용: %s\n",sqlite3_column_int(res,0), sqlite3_column_int(res,1),sqlite3_column_text(res,2), sqlite3_column_text(res,4));
 				if(send(nsd, Smsg, sizeof(Smsg),0) == -1)
 					printf("send error\n");
 			}

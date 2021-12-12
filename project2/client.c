@@ -72,14 +72,26 @@ int main(void)
 				// 오류가 발생하면 출력
 				printf("send error\n");
 			}
-			int days;
+			char days[MAX];
 			char tname[MAX];
 			char tdesct[MAXLEN];	
 			printf("Todolist에 저장할 항목을 입력해주세요.\n");
+			printf("날짜를 입력해주세요:");
+			scanf("%s", days);
 			printf("이름(50글자이내):");
 			scanf("%s", tname);
 			printf("설명(256글자이내)");
 			scanf("%s", tdesct);
+			
+			len = strlen(days);
+			days[len+1] = '\0';
+			strcpy(Smsg, days);
+			if(send(sd, Smsg,sizeof(Smsg), 0) == -1)
+			{
+				perror("send error1\n");
+				exit(1);
+			}
+
 			len= strlen(tname);
 			tname[len+1] = '\0';
 			strcpy(Smsg,tname);
@@ -87,15 +99,16 @@ int main(void)
 			if(send(sd, Smsg,sizeof(Smsg),0) == -1)
 			{
 				// 오류발생시 종료.
-				printf("send error\n");
+				perror("send error2\n");
 				exit(1);
 			}
+			
 			len = strlen(tdesct);
 			tdesct[len+1] = '\0';
 			strcpy(Smsg, tdesct);
 			if(send(sd,Smsg,sizeof(Smsg),0) == -1)
 			{
-				printf("send error2\n");
+				perror("send error3\n");
 				exit(1);
 			}
 			
