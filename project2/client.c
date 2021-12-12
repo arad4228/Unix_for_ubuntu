@@ -45,11 +45,9 @@ int main(void)
 		printf("1. 할일 저장하기(N)\n");
 		printf("2. 할일 지우기(D)\n");
 		printf("3. 할일 출력하기(모두)(A)\n");
-		printf("4. 할일 출력하기(이름)(S)\n");
+		printf("4. 할일 출력하기(ID)(S)\n");
 		printf("5. 종료(Q,q)\n"); 
-		command = getc(stdin);
-		fflush(stdin);
-		printf("%c", command);
+		scanf("%c", &command);
 		// Q또는 q가 들어오면 데이터 송수신을 중단하고 종료한다.
 		if((command == 'q') || (command == 'Q'))
 		{
@@ -73,17 +71,18 @@ int main(void)
 				// 오류가 발생하면 출력
 				printf("send error\n");
 			}
-
 			int days;
 			char tname[MAX];
-			char tdesct[MAXLEN];
-			printf("Todolist에 저장할 항목을 입력해주세요.\n");				
-			scanf("요일: %d", &days);
-			scanf("이름(50글자이내): %s", tname);
-			scanf("설명(256글자 이내): %s", tdesct);
+			char tdesct[MAXLEN];	
+			printf("Todolist에 저장할 항목을 입력해주세요.\n");
+			printf("\n이름(50글자이내):");
+			scanf("%s", tname);
+			printf("\n설명(256글자이내)");
+			scanf("%s", tdesct);
 
+			fflush(stdin);
 			// 작성한 데이터를 서버로 보내기
-			sprintf(Smsg,"%d %s %s",days, tname, tdesct);
+			sprintf(Smsg,"%s %s",tname, tdesct);
 			// 데이터는 서버로 전달
 			if(send(sd, Smsg,sizeof(Smsg),0) == -1)
 			{
@@ -91,6 +90,7 @@ int main(void)
 				printf("send error\n");
 				exit(1);
 			}
+			
 			if(recv(sd, Rmsg, sizeof(Rmsg),0) == -1)
 			{
 				printf("recv fail\n");
@@ -99,22 +99,28 @@ int main(void)
 		}
 		else if(command == 'D')
 		{
-		// 2번째 명령어를 받았다면 내부에서 명령어를 dd로 변경하여 서버로 전달
+			// 2번째 명령어를 받았다면 내부에서 명령어를 dd로 변경하여 서버로 전달
 			strcpy(incom, "dd");
-			char dname[MAX];				
 			if(send(sd,incom,sizeof(incom),0) == -1)
 			{
 				// 오류가 발생하면 출력후 처음부터 메뉴 선택
 				printf("send error\n");
 			}
-
-			printf("TOdolist에서 삭제할 일정이름을 입력하세요.");
-			scanf("%s", dname);
+			printf("TOdolist에서 삭제할 일정ID을 입력하세요.");
+			scanf("%s", Smsg);
 				
 			// 서버로 이름을 보내서 내용을 제거하기
-			if(send(sd, dname,sizeof(dname),0) == -1)
-				// 오류가 발생하면 출력 후 처음부터 시작
+			if(send(sd, Smsg,sizeof(Smsg),0) == -1)
+			{	// 오류가 발생하면 출력 후 처음부터 시작
 				printf("send error\n");
+			}
+			if(recv(sd, Rmsg, sizeof(Rmsg), 0) == -1)
+			{
+				printf("recv error\n");
+				exit(1);
+			}
+			printf("%s\n",Rmsg);
+	
 		}
 		else if(command == 'A')
 		{	
@@ -127,9 +133,16 @@ int main(void)
 			}
 
 			// 몇개의 row인지 전송받음.
-			if(recv(sd, Rmsg,sizeof(Rmsg)+1,0) == -1)
+			if(recv(sd, Rmsg,sizeof(Rmsg),0) == -1)
+			{
 				printf("recv error\n");
+			}
 			numberofRow = atoi(Rmsg);
+			printf("%d\n",numberofRow);
+			if (numberofRow == 0)
+			{
+				printf("데이터베이스에 아무것도 없습니다.\n");
+			}
 			for(int i = 0; i < numberofRow; i++)
 			{
 				if(recv(sd, Rmsg, sizeof(Rmsg),0) == -1)
@@ -149,22 +162,25 @@ int main(void)
 				// 오류가 발생하면 출력후 처음부터 메뉴 선택
 				printf("send error\n");
 			}
-
-			scanf(" Todolist에서 출력하길 원하는 이름을 입력하세요. %s", Smsg);
+			printf("Todolist에서 출력하길 원하는 Id을 입력하세요.");
+			scanf("%s", Smsg);
 		
 			// 삭제할 이름을서버로 보낸다
 			if(send(sd, Smsg, sizeof(Smsg),0) == -1)
 			{
-				// 문제가 있다면 다시 보낸다.
+				// 문제가 있다면 출력.
 				printf("send error\n");
 			}
+
+			if(recv(sd, Rmsg, sizeof(Rmsg),0) == -1)
+			{
+				printf("recv erro\n");
+			}
+			printf("%s\n",Rmsg);
 		}
 		else
-		{
 			printf("잘못된 값을 입력하셨습니다. 다시입력해주세요\n");
-		}
 	}
-
 
     	return 0;
 }

@@ -3,43 +3,13 @@
 
 #define SOCKET_NAME		"TodolistProject"
 
-void Create_table(sqlite3* rdb)
-{
-	sqlite3* db = rdb;
-	int rc;
-	char* err_msg = 0;
-	
-	// Todolist를 저장하는 database를 열기
-	rc = sqlite3_open("Todolist.db", &db);
-	// 해당 데이터 베이스를 연결 할 수 없다면
-	if(rc !=  SQLITE_OK)
-        {
-                // standard error에 해당 메시지를 출력하고 프로그램을 종료한다.
-                fprintf(stderr, "해당 데이터베이스를 열 수 없습니다. %s\n",sqlite3_errmsg(db));
-                sqlite3_close(db);
-                exit(1);
-        }
-	char* query = "DROP TABLE IF EXISTS Lists;"
-		"CREATE TABLE Lists (Days INT, Name TEXT PRIMARY KEY, Descrition TEXT);";
-	
-	rc = sqlite3_exec(db, query, 0, 0, &err_msg);
-	
-	// 명령어 실행이 실패했다면 standard err에 오류를 출력
-	if( rc != SQLITE_OK)
-        {
-                fprintf(stderr, "테이블을 만드는데 실패했습니다.\n");
-                fprintf(stderr, "SQL error: %s\n",err_msg);
-                sqlite3_free(err_msg);
-        }
-}
-
 int main(void)
 {
 	sqlite3* db;
 	int rc;
 	sqlite3_stmt* res;
 	int step;
-	
+	int no = 0;	
 	struct sockaddr_un ser, cli;
     	int sd, nsd, len, clen;
 	// 받는 메시지
@@ -86,7 +56,32 @@ int main(void)
     	}
 	printf("클라이언트 접속 완료\n");
 	// 데이터 베이스 생성
-	Create_table(db);
+	char* err_msg = 0;
+
+        // Todolist를 저장하는 database를 열기
+        rc = sqlite3_open("Todolist.db", &db);
+        // 해당 데이터 베이스를 연결 할 수 없다면
+        if(rc !=  SQLITE_OK)
+        {
+                // standard error에 해당 메시지를 출력하고 프로그램을 종료한다.
+                fprintf(stderr, "해당 데이터베이스를 열 수 없습니다. %s\n",sqlite3_errmsg(db));
+                sqlite3_close(db);
+                exit(1);
+        }
+        char* query = "DROP TABLE IF EXISTS Lists;"
+                "CREATE TABLE Lists (ID INTEGER PRIMARY KEY, Name TEXT, Descrition TEXT);"
+		"INSERT INTO Lists VALUES (1,'유닉스', '시험');";
+
+        rc = sqlite3_exec(db, query, 0, 0, &err_msg);
+
+        // 명령어 실행이 실패했다면 standard err에 오류를 출력
+        if( rc != SQLITE_OK)
+        {
+                fprintf(stderr, "테이블을 만드는데 실패했습니다.\n");
+                fprintf(stderr, "SQL error: %s\n",err_msg);
+                sqlite3_free(err_msg);
+        }
+	
 	while(1)
 	{
 		char command[4];
@@ -106,10 +101,10 @@ int main(void)
 		// 데이터 집어넣기
 		if(strcmp(command,"cd") == 0)
 		{
-			int days;
+			printf("ok cd\n");
 			char Name[MAX];
 			char Desct[MAXLEN];
-			char* query = "INSERT INTO Lists(Days,Name,Descrition) VALUES(?,?,?)";
+			char* query = "INSERT INTO Lists(Name, Descrition) VALUES('?','?')";
 			// client에서 보낸 메시지를 받기
 			if(recv(nsd, Rmsg, sizeof(Rmsg), 0) == -1)
 			{
@@ -117,16 +112,15 @@ int main(void)
 				perror("rece error\n");
 				exit(1);
 			}
-			sscanf(Rmsg,"%d %s %s",&days,Name,Desct);
+			sscanf(Rmsg,"%s %s", Name, Desct);
+			printf("%s %s",Name, Desct);
+
 			rc = sqlite3_prepare_v2(db,query, -1, &res, 0);
-			
-			if( rc = SQLITE_OK)
+			if( rc == SQLITE_OK)
 			{
-				sqlite3_bind_int(res,1,days);
-				sqlite3_bind_text(res,2,Name, -1, SQLITE_TRANSIENT);
-				sqlite3_bind_text(res,3,Desct,-1,SQLITE_TRANSIENT);
+				sqlite3_bind_text(res,1,Name, -1, SQLITE_TRANSIENT);
+				sqlite3_bind_text(res,2,Desct,-1, SQLITE_TRANSIENT);
 			}
-			
 			step = sqlite3_step(res);
 			sqlite3_finalize(res);
 			strcpy(Smsg, "저장이 완료되었습니다.\n");
@@ -140,17 +134,21 @@ int main(void)
 		// 데이터 삭제
 		if(strcmp(command,"dd") == 0)
 		{
+			int id;
+			printf("ok dd\n");
 			if(recv(nsd, Rmsg, sizeof(Rmsg), 0) == -1)
 			{
 				perror("recve error\n");
 				exit(1);
 			}
-			char* query = "DELETR FROM Lists WHRERE Name = ?";
+			printf("%s\n",Rmsg);
+			id = atoi(Rmsg);
+			char* query = "DELETE FROM Lists WHERE ID = ?";
 			rc = sqlite3_prepare_v2(db,query, -1, &res, 0);
 
-			if( rc = SQLITE_OK)
+			if( rc == SQLITE_OK)
 			{
-				sqlite3_bind_text(res,1,Rmsg, -1, SQLITE_TRANSIENT);
+				sqlite3_bind_int(res,1,id);
 			}
 			step = sqlite3_step(res);
 			strcpy(Smsg,"삭제가 완료되었습니다.\n");
@@ -165,11 +163,13 @@ int main(void)
 		// 데이터 모두 출력
 		if (strcmp(command,"Pd") == 0)
 		{
+			printf("ok Pd\n");
+			int count;
 			char* query1 = "SELECT COUNT(Name) FROM Lists";
 			rc = sqlite3_prepare_v2(db,query1,-1,&res,0);
 			if(rc != SQLITE_OK)
 			{
-				perror("query error\n");
+				perror("query error1\n");
 				exit(1);
 			}
 			step = sqlite3_step(res);
@@ -178,25 +178,28 @@ int main(void)
 			if(step == SQLITE_ROW)
 			{
 				sprintf(Smsg,"%d", sqlite3_column_int(res,0));
-				if(send(nsd,Smsg, sizeof(Smsg)+1, 0) == -1)
+				count = atoi(Smsg);
+				if(send(nsd,Smsg, sizeof(Smsg), 0) == -1)
 				{
 					perror("send error");
 				}
 			}
-			sqlite3_finalize(res);
 
 			// 모든 데이터를 전송하기.
-			char* query2 = "SELET * FROM Lists";
+			char* query2 = "SELECT * FROM Lists";
 			rc = sqlite3_prepare_v2(db,query2,-1,&res,0);
 			if(rc != SQLITE_OK)
 			{
-				perror("send error\n");
+				perror("query error2\n");
 				exit(1);
 			}
-			while(step == SQLITE_ROW)
+			for(int i = 0; i < count; i++)
 			{
-				sprintf(Smsg,"Days: %d 이름: %s, 세부내용: %s\n",sqlite3_column_int(res,0), sqlite3_column_text(res,1),sqlite3_column_text(res,2));
-                                if(send(nsd, Smsg, sizeof(Smsg)+1,0) == -1)
+				sprintf(Smsg,"ID: %d, 이름: %s, 세부내용: %s\n",
+				sqlite3_column_int(res,0), sqlite3_column_text(res,1),
+				sqlite3_column_text(res,2));
+                                printf("%s",Smsg);
+				if(send(nsd, Smsg, sizeof(Smsg),0) == -1)
                                         printf("send error\n");
 			}
 
@@ -205,24 +208,34 @@ int main(void)
 		// 이름으로 원하는 데이터 출력
 		if (strcmp(command,"pd") == 0)
 		{
-			if(recv(nsd,Rmsg,sizeof(Rmsg)+1,0) == -1)
+			int id;
+			printf("ok pd\n");
+			if(recv(nsd,Rmsg,sizeof(Rmsg),0) == -1)
 			{
 				printf("rece error\n");
 				exit(1);
 			}
-			char* query = "SELETR * FROM Lists WHERE Name = ?";
+			id = atoi(Rmsg);
+			printf("%s\n",Rmsg);
+			char* query = "SELETR * FROM Lists WHERE ID = ?";
 			rc = sqlite3_prepare_v2(db,query, -1, &res, 0);
 			if( rc == SQLITE_OK)
 			{
-				sqlite3_bind_text(res,1,Rmsg,-1, SQLITE_TRANSIENT);
+				sqlite3_bind_int(res,1,id);
 			}
 			step = sqlite3_step(res);
 
 			if(step ==  SQLITE_ROW)
 			{
-				sprintf(Smsg,"Days: %d 이름: %s, 세부내용: %s\n",sqlite3_column_int(res,0), sqlite3_column_text(res,1),sqlite3_column_text(res,2));
-				if(send(nsd, Smsg, sizeof(Smsg)+1,0) == -1)
+				sprintf(Smsg,"ID: %d 이름: %s, 세부내용: %s\n",sqlite3_column_int(res,0), sqlite3_column_text(res,1),sqlite3_column_text(res,2));
+				if(send(nsd, Smsg, sizeof(Smsg),0) == -1)
 					printf("send error\n");
+			}
+			else
+			{
+				strcpy(Smsg,"아무런 데이터가 없습니다.");
+				if(send(nsd, Smsg, sizeof(Smsg),0) == -1)
+					printf("send erro\n");
 			}
 			sqlite3_finalize(res);
 		}
