@@ -7,9 +7,9 @@ int main(void)
     	int sd, len;
 	// 반복문을 끝내기 위한 장치이며 사용자의 입력을 받아줄 변수
 	char incom[4];
-	char command;
 	struct sockaddr_un ser;
 	
+	char command;
 	// 소켓을 생성한다.
     	if ((sd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) 
 	{
@@ -47,7 +47,7 @@ int main(void)
 		printf("3. 할일 출력하기(모두)(A)\n");
 		printf("4. 할일 출력하기(ID)(S)\n");
 		printf("5. 종료(Q,q)\n"); 
-		scanf("%c", &command);
+		scanf(" %c", &command);
 		// Q또는 q가 들어오면 데이터 송수신을 중단하고 종료한다.
 		if((command == 'q') || (command == 'Q'))
 		{
@@ -64,6 +64,7 @@ int main(void)
 		}
 		else if(command == 'N')
 		{	
+			int len;
 			// 첫번째 명령어를 받았다면 내부에서 명령어를 cd로 변경하여 서버로 전달
 			strcpy(incom,"cd");
 			if(send(sd,incom,sizeof(incom),0) == -1)	
@@ -79,8 +80,11 @@ int main(void)
 			scanf("%s", tname);
 			printf("\n설명(256글자이내)");
 			scanf("%s", tdesct);
-
-			fflush(stdin);
+			len = strlen(tname);
+			tname[len+1] = '\0';
+			len = strlen(tdesct);
+			tdesct[len+1] = '\0';
+			
 			// 작성한 데이터를 서버로 보내기
 			sprintf(Smsg,"%s %s",tname, tdesct);
 			// 데이터는 서버로 전달
@@ -99,6 +103,7 @@ int main(void)
 		}
 		else if(command == 'D')
 		{
+			int len;
 			// 2번째 명령어를 받았다면 내부에서 명령어를 dd로 변경하여 서버로 전달
 			strcpy(incom, "dd");
 			if(send(sd,incom,sizeof(incom),0) == -1)
@@ -108,7 +113,9 @@ int main(void)
 			}
 			printf("TOdolist에서 삭제할 일정ID을 입력하세요.");
 			scanf("%s", Smsg);
-				
+			len = strlen(Smsg);
+			Smsg[len+1] = '\0';
+
 			// 서버로 이름을 보내서 내용을 제거하기
 			if(send(sd, Smsg,sizeof(Smsg),0) == -1)
 			{	// 오류가 발생하면 출력 후 처음부터 시작
@@ -179,9 +186,10 @@ int main(void)
 			printf("%s\n",Rmsg);
 		}
 		else
+		{
 			printf("잘못된 값을 입력하셨습니다. 다시입력해주세요\n");
+		}
 	}
-
     	return 0;
 }
 
