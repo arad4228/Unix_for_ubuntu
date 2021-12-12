@@ -195,7 +195,7 @@ int main(void)
 				perror("query error2\n");
 				exit(1);
 			}
-			for(int i = 0; i < count; i++)
+			while(sqlite3_step(res) == SQLITE_ROW)
 			{
 				sprintf(Smsg,"ID: %d, 이름: %s, 세부내용: %s\n",
 				sqlite3_column_int(res,0), sqlite3_column_text(res,1),
